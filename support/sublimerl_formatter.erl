@@ -49,6 +49,7 @@ main(_) ->
 	halt(1).
 
 read_file(File) ->
+    io:format("file name: ~p", [File]),
     {ok, FileDev} = file:open(File, [raw, read, read_ahead]),
 	Lines = read_file([],FileDev),
     file:close(FileDev),
