@@ -305,7 +305,17 @@ class SublimErlCompletionsListener(sublime_plugin.EventListener):
         pt = locations[0] - len(prefix) - 1
         ch = view.substr(sublime.Region(pt, pt + 1))
         if ch != ':':
-            return []
+            module_name = os.path.split(view.file_name())[1][:-4]
+            funs = SUBLIMERL_COMPLETIONS['current_project'][
+                'completions'].get(module_name, [])
+
+            fun_names = set(fun_names_no_slash(funs))
+            compl = set(view.extract_completions(prefix))
+            compl_no_fun = compl - fun_names   # 去除与当前文件中函数重复的补全
+
+            compl_default = [(i, i) for i in compl_no_fun]
+            funs.extend(compl_default)
+            return funs
 
         # get function name that triggered the autocomplete
         function_name = view.substr(view.word(pt))
@@ -313,9 +323,6 @@ class SublimErlCompletionsListener(sublime_plugin.EventListener):
         if function_name.strip() == ':':
             return
         # check for existance
-        global SUBLIMERL_COMPLETIONS
-
-        print (SUBLIMERL_COMPLETIONS['current_project'])
         if function_name in SUBLIMERL_COMPLETIONS['erlang_libs']['completions']:
             available_completions = SUBLIMERL_COMPLETIONS[
                 'erlang_libs']['completions'][function_name]
@@ -327,3 +334,10 @@ class SublimErlCompletionsListener(sublime_plugin.EventListener):
 
         # return snippets
         return (available_completions, sublime.INHIBIT_WORD_COMPLETIONS | sublime.INHIBIT_EXPLICIT_COMPLETIONS)
+
+
+def fun_names_no_slash(fns):
+    ret = []
+    for fn, snippets in fns:
+        ret.append(fn[:-2])
+    return ret
